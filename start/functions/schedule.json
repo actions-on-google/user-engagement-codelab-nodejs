@@ -1,0 +1,164 @@
+{
+    "classes": [
+        "Yoga",
+        "Cycling",
+        "Dance",
+        "Kickboxing"
+    ],
+    "days": {
+        "Monday": [
+            {
+                "name": "Yoga",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Cycling",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Tuesday": [
+            {
+                "name": "Kickboxing",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Kickboxing",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Wednesday": [
+            {
+                "name": "Yoga",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Thursday": [
+            {
+                "name": "Kickboxing",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Cycling",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Kickboxing",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Friday": [
+            {
+                "name": "Yoga",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Saturday": [
+            {
+                "name": "Cycling",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Kickboxing",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ],
+        "Sunday": [
+            {
+                "name": "Cycling",
+                "startTime": "6am",
+                "endTime": "7am"
+            },
+            {
+                "name":"Yoga",
+                "startTime": "7am",
+                "endTime": "8am"
+            },
+            {
+                "name":"Dance",
+                "startTime": "6pm",
+                "endTime": "7pm"
+            },
+            {
+                "name":"Kickboxing",
+                "startTime": "7pm",
+                "endTime": "8pm"
+            }
+        ]
+    }
+}
