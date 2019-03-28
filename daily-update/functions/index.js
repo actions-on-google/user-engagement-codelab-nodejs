@@ -148,7 +148,7 @@ app.intent('Confirm Updates', (conv, params, registered) => {
      conv.ask('Gotcha, I\'ll send you an update everyday with the ' +
      'list of classes. Can I help you with anything else?');
   } else {
-    conv.ask('Ok, I won\'t send you daily updates. Can I help you with anything else?');
+    conv.ask(' I won\'t send you daily reminders. Can I help you with anything else?');
   }
   if (conv.screen) {
     conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES]));
