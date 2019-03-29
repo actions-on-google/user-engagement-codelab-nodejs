@@ -90,10 +90,10 @@ app.intent('Class List', (conv, {day}) => {
   .join(', ');
   let classesMessage = `On ${day} we offer the following classes: ${classes}. `;
   // If the user started the conversation from the context of a daily update,
-  // the conv object will contain an 'UPDATES' argument
+  // the conv object will contain an 'UPDATES' argument.
   let engagement = conv.arguments.get('UPDATES');
   let classSuggestions = [Suggestion.DAILY, Suggestion.HOURS];
-  // Check the conv arguments to tailor the conversation based on the context
+  // Check the conv arguments to tailor the conversation based on the context.
   if (engagement) {
     classesMessage += `Hope to see you soon at Action Gym!`;
     conv.close(classesMessage);

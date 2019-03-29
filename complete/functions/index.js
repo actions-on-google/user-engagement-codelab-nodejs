@@ -15,35 +15,38 @@
 
 const {
   dialogflow,
-  RegisterUpdate,
   Suggestions,
+  RegisterUpdate,
   UpdatePermission,
 } = require('actions-on-google');
-const request = require('request');
-const {auth} = require('google-auth-library');
 const functions = require('firebase-functions');
 // Load schedule from JSON file
 const schedule = require('./schedule.json');
+
+// Firebase admin import
 const admin = require('firebase-admin');
+
+// Initialize Firestore
+admin.initializeApp();
+const db = admin.firestore();
 
 // Firestore constants
 const FirestoreNames = {
-  INTENT: 'intent',
-  USER_ID: 'userId',
-  USERS: 'users',
+ INTENT: 'intent',
+ USER_ID: 'userId',
+ USERS: 'users',
 };
+
+// Actions API authentication imports
+const {auth} = require('google-auth-library');
+const request = require('request')
 
 // Suggestion chip titles
 const Suggestion = {
   HOURS: 'Ask about hours',
   CLASSES: 'Learn about classes',
-  REMINDER: 'Set reminders',
-  CANCELLATION: 'Class cancellation',
-  DAILY_UPDATE: 'Send daily updates',
-  ROUTINES: 'Set up routines',
-  NOTIFICATION: 'Send notifications',
-  YES: 'Sure!',
-  NO: 'No thanks',
+  ROUTINES: 'Add to routines',
+  NOTIFICATIONS: 'Get notifications',
 };
 
 // Days of the week
@@ -57,15 +60,11 @@ const DAYS = [
   'Saturday',
 ];
 
-// Initialize Firestore
-admin.initializeApp();
-const db = admin.firestore();
-
-// Dialogflow app instance
+// Dialogflow app instance 
 const app = dialogflow({debug: true});
 
 /*
- * Middleware that runs before every intent handler.
+ * Fallback counting that runs before every intent handler.
  * Will reset the fallback count to 0 if the intent
  * is anything other than the fallback intent.
  */
@@ -76,24 +75,23 @@ app.middleware((conv) => {
 });
 
 // Welcome intent handler
-app.intent('welcome', (conv) => {
+app.intent('Welcome', (conv) => {
   const welcomeMessage = 'Welcome to Action Gym, your local gym here to ' +
     'support your health goals. You can ask me about our hours ' +
     'or what classes we offer each day.';
   conv.ask(welcomeMessage);
   if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES,
-      Suggestion.CANCELLATION]));
+    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES]));
   }
 });
 
 // Quit intent handler
-app.intent('quit', (conv) => {
+app.intent('Quit', (conv) => {
   conv.close('Great chatting with you!');
 });
 
 // Hours intent handler
-app.intent('hours', (conv) => {
+app.intent('Hours', (conv) => {
   const hoursMessage = 'Our free weights and machines are available ' +
     'from 5am - 10pm, seven days a week. Can I help you with anything else?';
   conv.ask(hoursMessage);
@@ -103,26 +101,33 @@ app.intent('hours', (conv) => {
 });
 
 // Class list intent handler
-app.intent('classList', (conv, {day}) => {
+app.intent('Class List', (conv, {day}) => {
   if (!day) {
     day = DAYS[new Date().getDay()];
   }
   const classes =
-    [...new Set(schedule.days[day].map((d) => `${d.name} at ${d.startTime}`))]
-    .join(', ');
-  const classesMessage =
-    `On ${day} we offer the following classes: ${classes}. ` +
-    `If you'd like, I can send you reminders about our classes. ` +
-    `Can I help you with anything else?`;
-  conv.ask(classesMessage);
-  if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.REMINDER,
-      Suggestion.CANCELLATION]));
-  }
+  [...new Set(schedule.days[day].map((d) => `${d.name} at ${d.startTime}`))]
+  .join(', ');
+  let classesMessage = `On ${day} we offer the following classes: ${classes}. `;
+  // If the user started the conversation from the context of a routine,
+  // the conv object will contain an 'UPDATES' argument.
+  let engagement = conv.arguments.get('UPDATES');
+  let classSuggestions = [Suggestion.ROUTINES, Suggestion.NOTIFICATIONS,  Suggestion.HOURS];
+  // Check the conv arguments to tailor the conversation based on the context.
+  if (engagement) {
+    classesMessage += `Hope to see you soon at Action Gym!`;
+    conv.close(classesMessage);
+  } else {
+    classesMessage += `Would you like to add a class list reminder to your routines, subscribe to notifications about cancelations, or can I help you with anything else?`;
+    conv.ask(classesMessage);
+    if (conv.screen) {
+      conv.ask(new Suggestions(classSuggestions));
+    };
+  };
 });
 
-// No-input intent handler
-app.intent('noInput', (conv) => {
+// No Input intent handler
+app.intent('No Input', (conv) => {
   const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
   if (repromptCount === 0) {
     conv.ask('Sorry, I can\'t hear you.');
@@ -135,7 +140,7 @@ app.intent('noInput', (conv) => {
 });
 
 // Fallback intent handler
-app.intent('fallback', (conv) => {
+app.intent('Fallback', (conv) => {
   conv.data.fallbackCount++;
   if (conv.data.fallbackCount === 1) {
     conv.ask('Sorry, what was that?');
@@ -148,146 +153,107 @@ app.intent('fallback', (conv) => {
   }
  });
 
-// Reminders intent handler
-// The prompt and suggestion chips for this intent should
-// be updated for Routines when testing Routine flow.
-app.intent('reminder', (conv) => {
-  const reminderMessage = 'Great! I can send you the list of classes by ' +
-    'sending you a daily updates. Let me know if you want me to send these ' +
-    'to you.';
-  conv.ask(reminderMessage);
-  if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.DAILY_UPDATE]));
-  }
-});
-
-// Notifications intent handler
-app.intent('notification', (conv) => {
-  const moreOptionsMessage = 'I can support you by sending you ' +
-    'notifications when classes get cancelled due to emergencies. ' +
-    'Let me know if you want me to send these to you.';
-  conv.ask(moreOptionsMessage);
-  if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.NOTIFICATION]));
-  }
-});
-
-app.intent('setupPushNotifications', (conv) => {
-  conv.ask('Update permission for setting up push notifications');
-  conv.ask(new UpdatePermission({intent: 'classCanceled'}));
-});
-
-// Start opt-in flow for push notifications
-app.intent('configurePushNotifications', (conv) => {
-  if (conv.arguments.get('PERMISSION')) {
-    let userId = conv.arguments.get('UPDATES_USER_ID');
-    if (!userId) {
-      userId = conv.request.conversation.conversationId;
-    }
-    return db.collection(FirestoreNames.USERS)
-    .add({
-      [FirestoreNames.INTENT]: 'classCanceled',
-      [FirestoreNames.USER_ID]: userId,
-    })
-    .then(() => {
-      conv.ask('Cool, I\'ll notify you whenever there is a cancelation. ' +
-        'Would you like anything else?');
-    });
-  } else {
-    conv.ask('Okay, I won\'t notify you. Would you like anything else?');
-  }
-});
-
-// Intent to be triggered when tapping push notification
-app.intent('classCanceled', (conv) => {
-  conv.ask('A class was canceled.');
-});
-
-// Start opt-in flow for daily updates
-app.intent('setupUpdates', (conv) => {
-  conv.ask(new RegisterUpdate({
-    intent: 'classList',
-    frequency: 'DAILY',
-  }));
-});
-
-// Confirm outcome of opt-in for daily updates.
-app.intent('configureUpdates', (conv, params, registered) => {
-  if (registered && registered.status === 'OK') {
-    conv.ask('Gotcha, I\'ll send you an update everyday with the ' +
-      'list of classes. Anything else I can help you with?');
-  } else {
-    conv.ask('Ok, I won\'t send you daily updates. Anything else I ' +
-      'can help you with?');
-  }
-  if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES,
-      Suggestion.REMINDER, Suggestion.CANCELLATION]));
-  }
-});
-
 // Start opt-in flow for routines
-app.intent('setupRoutine', (conv) => {
+app.intent('Setup Routine', (conv) => {
   conv.ask(new RegisterUpdate({
-    intent: 'classList',
+    intent: 'Class List',
     frequency: 'ROUTINES',
   }));
 });
 
-// Confirm outcome of opt-in for routines.
-app.intent('configureRoutine', (conv) => {
-  conv.ask('Anything else I can help you with?');
+// Confirm outcome of opt-in for routines
+app.intent('Confirm Routine', (conv) => {
+  conv.ask(' Can I help you with anything else?');
   if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES,
-      Suggestion.REMINDER, Suggestion.NOTIFICATION]));
+    conv.ask(new Suggestions([Suggestion.HOURS]));
   }
 });
 
-// Cancel class intent to trigger a push notification from
-// the Action conversation itself.
-app.intent('cancelClass', (conv) => {
-  let client = auth.fromJSON(require('./service-account.json'));
-  client.scopes = ['https://www.googleapis.com/auth/actions.fulfillment.conversation'];
-  let notification = {
-    userNotification: {
-      title: 'Notification Title',
-    },
-    target: {},
-  };
-  client.authorize((err, tokens) => {
-    if (err) {
-      throw new Error(`Auth error: ${err}`);
-    }
-    db.collection(FirestoreNames.USERS)
-        .where(FirestoreNames.INTENT, '==', 'classCanceled')
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((user) => {
-            notification.target = {
-              userId: user.get(FirestoreNames.USER_ID),
-              intent: user.get(FirestoreNames.INTENT),
-            };
-            request.post('https://actions.googleapis.com/v2/conversations:send', {
-              'auth': {
-                'bearer': tokens.access_token,
-              },
-              'json': true,
-              'body': {'customPushMessage': notification, 'isInSandbox': true},
-            }, (err, httpResponse, body) => {
-              if (err) {
-                throw new Error(`API request error: ${err}`);
-              }
-              console.log(`${httpResponse.statusCode}: ` +
-                `${httpResponse.statusMessage}`);
-              console.log(JSON.stringify(body));
-            });
-          });
-        })
-        .catch((error) => {
-          throw new Error(`Firestore query error: ${error}`);
-        });
-  });
-  conv.ask('A notification has been sent to all subscribed users.');
+// Call the User Information helper for permission to send push notifications
+app.intent('Setup Push Notifications', (conv) => {
+ conv.ask('Update permission for setting up push notifications');
+ conv.ask(new UpdatePermission({intent: 'Class Canceled'}));
+});
+
+// Handle opt-in or rejection of push notifications
+app.intent('Confirm Push Notifications', (conv) => {
+ if (conv.arguments.get('PERMISSION')) {
+   let userId = conv.arguments.get('UPDATES_USER_ID');
+   if (!userId) {
+     userId = conv.request.conversation.conversationId;
+   }
+   // Add the current conversation ID and the notification’s
+   // target intent to the Firestore database.
+   return db.collection(FirestoreNames.USERS)
+   .add({
+     [FirestoreNames.INTENT]: 'Class Canceled',
+     [FirestoreNames.USER_ID]: userId,
+   })
+   .then(() => {
+     conv.ask(`Great, I'll notify you whenever there's a class cancelation. ` +
+     'Can I help you with anything else?');
+   });
+ } else {
+   conv.ask(`Okay, I won't send you notifications about class cancelations. ` +
+     'Can I help you with anything else?');
+ }
+ if (conv.screen) {
+    conv.ask(new Suggestions([Suggestion.ROUTINES, Suggestion.HOURS]));
+  }
+});
+
+// Intent triggered by tapping the push notification
+app.intent('Class Canceled', (conv) => {
+ conv.ask('Classname at classtime has been canceled.');
+});
+
+// Trigger a test push notification mid-conversation
+app.intent('Cancel Class', (conv) => {
+ // Use the Actions API to send a Google Assistant push notification.
+ let client = auth.fromJSON(require('./service-account.json'));
+ client.scopes = ['https://www.googleapis.com/auth/actions.fulfillment.conversation'];
+ let notification = {
+   userNotification: {
+     title: 'Test Notification from Action Gym',
+   },
+   target: {},
+ };
+ client.authorize((err, tokens) => {
+   if (err) {
+     throw new Error(`Auth error: ${err}`);
+   }
+   // Iterate through Firestore and send push notifications to every user
+   // who’s currently opted in to canceled class notifications.
+   db.collection(FirestoreNames.USERS)
+       .where(FirestoreNames.INTENT, '==', 'Class Canceled')
+       .get()
+       .then((querySnapshot) => {
+         querySnapshot.forEach((user) => {
+           notification.target = {
+             userId: user.get(FirestoreNames.USER_ID),
+             intent: user.get(FirestoreNames.INTENT),
+           };
+           request.post('https://actions.googleapis.com/v2/conversations:send', {
+             'auth': {
+               'bearer': tokens.access_token,
+             },
+             'json': true,
+             'body': {'customPushMessage': notification, 'isInSandbox': true},
+           }, (err, httpResponse, body) => {
+             if (err) {
+               throw new Error(`API request error: ${err}`);
+             }
+             console.log(`${httpResponse.statusCode}: ` +
+               `${httpResponse.statusMessage}`);
+             console.log(JSON.stringify(body));
+           });
+         });
+       })
+       .catch((error) => {
+         throw new Error(`Firestore query error: ${error}`);
+       });
+ });
+ conv.ask('A notification has been sent to all subscribed users.');
 });
 
 exports.fulfillment = functions.https.onRequest(app);
