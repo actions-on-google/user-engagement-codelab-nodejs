@@ -49,7 +49,7 @@ const app = dialogflow({debug: true});
  * is anything other than the fallback intent.
  */
 app.middleware((conv) => {
-  if (!conv.data.fallbackCount || !(conv.intent === 'fallback')) {
+  if (!conv.data.fallbackCount || !(conv.intent === 'Fallback')) {
     conv.data.fallbackCount = 0;
   }
 });
