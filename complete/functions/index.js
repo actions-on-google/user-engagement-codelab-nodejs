@@ -45,7 +45,7 @@ const request = require('request')
 const Suggestion = {
   HOURS: 'Ask about hours',
   CLASSES: 'Learn about classes',
-  ROUTINES: 'Add to routines',
+  DAILY: 'Send daily reminders',
   NOTIFICATIONS: 'Get notifications',
 };
 
@@ -60,7 +60,7 @@ const DAYS = [
   'Saturday',
 ];
 
-// Dialogflow app instance 
+// Dialogflow app instance
 const app = dialogflow({debug: true});
 
 /*
@@ -109,19 +109,20 @@ app.intent('Class List', (conv, {day}) => {
   [...new Set(schedule.days[day].map((d) => `${d.name} at ${d.startTime}`))]
   .join(', ');
   let classesMessage = `On ${day} we offer the following classes: ${classes}. `;
-  // If the user started the conversation from the context of a routine,
-  // the conv object will contain an 'UPDATES' argument.
+  // If the user started the conversation from the context of a daily update,
+  // the conv's arguments will contain an 'UPDATES' section.
   let engagement = conv.arguments.get('UPDATES');
-  let classSuggestions = [Suggestion.ROUTINES, Suggestion.NOTIFICATIONS,  Suggestion.HOURS];
   // Check the conv arguments to tailor the conversation based on the context.
   if (engagement) {
     classesMessage += `Hope to see you soon at Action Gym!`;
     conv.close(classesMessage);
   } else {
-    classesMessage += `Would you like to add a class list reminder to your routines, subscribe to notifications about cancelations, or can I help you with anything else?`;
+    classesMessage += `Would you like to receive daily reminders of upcoming ` +
+      `classes, subscribe to notifications about cancelations, or can I help ` +
+      `you with anything else?`;
     conv.ask(classesMessage);
     if (conv.screen) {
-      conv.ask(new Suggestions(classSuggestions));
+      conv.ask(new Suggestions([Suggestion.DAILY, Suggestion.NOTIFICATIONS,  Suggestion.HOURS]));
     };
   };
 });
@@ -153,19 +154,24 @@ app.intent('Fallback', (conv) => {
   }
  });
 
-// Start opt-in flow for routines
-app.intent('Setup Routine', (conv) => {
+// Start opt-in flow for daily updates
+app.intent('Setup Updates', (conv) => {
   conv.ask(new RegisterUpdate({
     intent: 'Class List',
-    frequency: 'ROUTINES',
+    frequency: 'DAILY',
   }));
 });
 
-// Confirm outcome of opt-in for routines
-app.intent('Confirm Routine', (conv) => {
-  conv.ask(' Can I help you with anything else?');
+// Confirm outcome of opt-in for daily updates.
+app.intent('Confirm Updates', (conv, params, registered) => {
+  if (registered && registered.status === 'OK') {
+    conv.ask(`Gotcha, I'll send you an update everyday with the ` +
+      'list of classes. Can I help you with anything else?');
+  } else {
+    conv.ask(` I won't send you daily reminders. Can I help you with anything else?`);
+  }
   if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.HOURS]));
+    conv.ask(new Suggestions([Suggestion.HOURS, Suggestion.CLASSES]));
   }
 });
 
@@ -198,7 +204,7 @@ app.intent('Confirm Push Notifications', (conv) => {
      'Can I help you with anything else?');
  }
  if (conv.screen) {
-    conv.ask(new Suggestions([Suggestion.ROUTINES, Suggestion.HOURS]));
+    conv.ask(new Suggestions([Suggestion.CLASSES, Suggestion.HOURS]));
   }
 });
 
