@@ -99,11 +99,11 @@ app.intent('Class List', (conv, {day}) => {
 app.intent('No Input', (conv) => {
   const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
   if (repromptCount === 0) {
-    conv.ask('Sorry, I can\'t hear you.');
+    conv.ask(`Sorry, I can't hear you.`);
   } else if (repromptCount === 1) {
-    conv.ask('I\'m sorry, I still can\'t hear you.');
+    conv.ask(`I'm sorry, I still can't hear you.`);
   } else if (conv.arguments.get('IS_FINAL_REPROMPT')) {
-    conv.close('I\'m sorry, I\'m having trouble here. ' +
+    conv.close(`I'm sorry, I'm having trouble here. ` +
       'Maybe we should try this again later.');
   }
 });
@@ -114,11 +114,11 @@ app.intent('Fallback', (conv) => {
   if (conv.data.fallbackCount === 1) {
     conv.ask('Sorry, what was that?');
   } else if (conv.data.fallbackCount === 2) {
-    conv.ask('I didn\'t quite get that. I can tell you our hours ' +
+    conv.ask(`I didn't quite get that. I can tell you our hours ` +
       'or what classes we offer each day.');
   } else {
-    conv.close('Sorry, I\'m still having trouble. ' +
-      'So let\'s stop here for now. Bye.');
+    conv.close(`Sorry, I'm still having trouble. ` +
+      `So let's stop here for now. Bye.`);
   }
  });
 
