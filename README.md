@@ -9,6 +9,8 @@ For detailed instructions on using this code, refer to the
 [Actions on Google user engagement codelab](https://codelabs.developers.google.com/?cat=Assistant).
 The following steps explain how to deploy the code found in the `start` directory.
 
+:warning: These codelab samples were built using Dialogflow. We now recommend using [Actions Builder or the Actions SDK](https://developers.google.com/assistant/conversational/overview) to develop, test, and deploy Conversational Actions.
+
 ## Setup Instructions
 ### Prerequisites
 1. Node.js and NPM
