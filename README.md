@@ -1,5 +1,8 @@
 # Actions on Google: User Engagement Codelab
 
+*:warning: Warning: Conversational Actions will be deprecated on June 13, 2023. For more information, see [Conversational Actions Sunset](https://goo.gle/ca-sunset).*
+
+
 These samples serves as the completed source code for the [Actions on Google user engagement codelab](https://codelabs.developers.google.com/?cat=Assistant).
 The `start` directory should be used as a starting point for the codelab.
 The `daily-update` directory can be used as a reference for the implementation of the daily updates feature.
